@@ -148,7 +148,6 @@ namespace RPM_Parts_Checklist
 
         void UpdateItem(int index, bool completed)
         {
-            Debug.Log("[RPM_Parts_Checklist] Updating item " + index + " to " + completed);
             if (index < items.Count)
             {
                 items[index].completed = completed;
@@ -205,14 +204,12 @@ namespace RPM_Parts_Checklist
 
         public string Display(int screenWidth, int screenHeight)
         {
-            Debug.Log("[RPM_Parts_Checklist] Displaying checklist view");
             dl.elements.Clear();
 
             int counter = 0;
             foreach (ChecklistItem item in items)
             {
                 int itemIndex = counter;
-                Debug.Log("[RPM_Parts_Checklist] Adding item to display list: " + item.completed);
                 dl.elements.Add(new DisplayListElement(
                     (int index, bool selected, int screenWidth) =>
                     {
@@ -252,7 +249,6 @@ namespace RPM_Parts_Checklist
                     },
                     (int button) =>
                     {
-                        Debug.Log("[RPM_Parts_Checklist] Button " + button + " pressed on item " + counter);
                         if (button == 2) UpdateItem(itemIndex, true);
                         else if (button == 3) UpdateItem(itemIndex, false);
                     }
