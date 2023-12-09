@@ -1,6 +1,0 @@
-Open file explorer
-Navigate to KSP's installation folder
-Open GameData/RPM_Parts_Checklist/checklist.txt
-Write your own checklist!
-Look at me Morty, I turned myself into a checklist
-I'm checklist Rick!
