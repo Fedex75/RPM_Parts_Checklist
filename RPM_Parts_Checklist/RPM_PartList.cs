@@ -1,5 +1,4 @@
 ﻿using KSP.Localization;
-using UnityEngine;
 
 namespace RPM_Parts_Checklist
 {
@@ -71,9 +70,7 @@ namespace RPM_Parts_Checklist
             dl.elements.Add(new DisplayListElement(
                 (int index, bool selected, int screenWidth) =>
                 {
-                    List<string> output = new();
-                    output.Add((selected ? "[#20BF6BFF]" : "") + "Show part list");
-                    return output;
+                    return new List<string>() { (selected ? "[#20BF6BFF]" : "") + "Show part list" };
                 },
                 (int button) => {
                     if (button == 2) router.Navigate("partList");
@@ -84,9 +81,7 @@ namespace RPM_Parts_Checklist
             dl.elements.Add(new DisplayListElement(
                 (int index, bool selected, int screenWidth) =>
                 {
-                    List<string> output = new();
-                    output.Add((selected ? "[#20BF6BFF]" : "") + "Help");
-                    return output;
+                    return new List<string>() { (selected ? "[#20BF6BFF]" : "") + "Help" };
                 },
                 (int button) => {
                     if (button == 2) router.Navigate("help");
@@ -198,9 +193,7 @@ namespace RPM_Parts_Checklist
                 dl.elements.Add(new DisplayListElement(
                     (int index, bool selected, int screenWidth) =>
                     {
-                        List<string> output = new();
-                        output.Add((selected ? "[#20BF6BFF]" : "") + part.partInfo.title);
-                        return output;
+                        return new List<string>() { (selected ? "[#20BF6BFF]" : "") + part.partInfo.title };
                     },
                     (int button) => {
                         if (button == 2)

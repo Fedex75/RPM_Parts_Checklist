@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace RPM_Parts_Checklist
+﻿namespace RPM_Parts_Checklist
 {
     class ChecklistItem
     {
@@ -36,6 +34,9 @@ namespace RPM_Parts_Checklist
         public int buttonPrev = 8;
 
         Router router;
+
+        string selectedFile = "";
+
         public RPM_Checklist()
         {
             router = new("home");
@@ -46,8 +47,11 @@ namespace RPM_Parts_Checklist
             Checklist_HelpView helpView = new Checklist_HelpView(pageTitle);
             router.pages.Add(new Page("help", helpView.Display, helpView.ButtonProcessor));
 
+            Checklist_FileListView fileListView = new Checklist_FileListView(pageTitle, (string fileName) => { selectedFile = fileName; }, router);
+            router.pages.Add(new Page("files", fileListView.Display, fileListView.ButtonProcessor));
+
             Checklist_ChecklistView checklistView = new Checklist_ChecklistView(pageTitle);
-            router.pages.Add(new Page("checklist", checklistView.Display, checklistView.ButtonProcessor));
+            router.pages.Add(new Page("checklist", (int screenWidth, int screenHeight) => checklistView.Display(screenWidth, screenHeight, selectedFile), checklistView.ButtonProcessor));
         }
 
         public string Display(int screenWidth, int screenHeight)
@@ -75,13 +79,11 @@ namespace RPM_Parts_Checklist
             dl.elements.Add(new DisplayListElement(
                 (int index, bool selected, int screenWidth) =>
                 {
-                    List<string> output = new();
-                    output.Add((selected ? "[#20BF6BFF]" : "") + "Show checklist");
-                    return output;
+                    return new List<string>() { (selected ? "[#20BF6BFF]" : "") + "Show checklists" };
                 },
                 (int button) =>
                 {
-                    if (button == 2) router.Navigate("checklist");
+                    if (button == 2) router.Navigate("files");
                 }
             ));
 
@@ -89,9 +91,7 @@ namespace RPM_Parts_Checklist
             dl.elements.Add(new DisplayListElement(
                 (int index, bool selected, int screenWidth) =>
                 {
-                    List<string> output = new();
-                    output.Add((selected ? "[#20BF6BFF]" : "") + "Help");
-                    return output;
+                    return new List<string>() { (selected ? "[#20BF6BFF]" : "") + "Help" };
                 },
                 (int button) =>
                 {
@@ -111,57 +111,102 @@ namespace RPM_Parts_Checklist
         }
     }
 
+    class Checklist_FileListView
+    {
+        DisplayList dl = new();
+        string pageTitle;
+        Action<string> SetSelectedFile;
+        Router router;
+
+        public Checklist_FileListView(string pageTitle, Action<string> SetSelectedFile, Router router)
+        {
+            this.pageTitle = pageTitle;
+            this.SetSelectedFile = SetSelectedFile;
+            this.router = router;
+        }
+
+        public string Display(int screenWidth, int screenHeight)
+        {
+            dl.elements.Clear();
+            List<string> files = new();
+            string checklistDirectory = KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/Checklists/";
+            
+            if (Directory.Exists(checklistDirectory))
+            {
+                // Get all text files in the directory
+                string[] txtFiles = Directory.GetFiles(checklistDirectory, "*.txt");
+
+                // Display the list of text files
+                foreach (string txtFile in txtFiles)
+                {
+                    files.Add(txtFile);
+                }
+            }
+
+            foreach (string file in files)
+            {
+                dl.elements.Add(new DisplayListElement(
+                    (int index, bool selected, int screenWidth) =>
+                    {
+                        return new List<string>() { (selected ? "[#20BF6BFF]" : "") + Path.GetFileNameWithoutExtension(file) };
+                    },
+                    (int button) =>
+                    {
+                        if (button == 2)
+                        {
+                            SetSelectedFile(file);
+                            router.Navigate("checklist");
+                        }
+                    }
+                ));
+            }
+
+            if (dl.index >= dl.elements.Count) dl.index = dl.elements.Count - 1;
+
+            return Environment.NewLine + pageTitle + Environment.NewLine + Environment.NewLine + "Select checklist:" + Environment.NewLine + Environment.NewLine + dl.Display(screenWidth, screenHeight - 8);
+        }
+
+        public void ButtonProcessor(int button)
+        {
+            dl.ButtonProcessor(button);
+        }
+    }
+
     class Checklist_ChecklistView
     {
         DisplayList dl = new();
         string pageTitle;
+
         List<ChecklistItem> items = new();
 
         public Checklist_ChecklistView(string pageTitle)
         {
             this.pageTitle = pageTitle;
-            List<string> file = new();
-            bool readSuccessful = ReadFile(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/checklist.txt", out file);
-
-            if (readSuccessful)
-            {
-                foreach (string item in file) items.Add(new ChecklistItem(item));
-
-                try
-                {
-                    ConfigNode node = ConfigNode.Load(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.txt");
-                    string loadedCompletedData = node.GetValue("completedData");
-                    if (loadedCompletedData.Length == items.Count)
-                    {
-                        for (int i = 0; i < items.Count; i++)
-                        {
-                            if (loadedCompletedData[i] == 'X')
-                            {
-                                items[i].completed = true;
-                            }
-                        }
-                    }
-                }
-                catch {}
-            }
         }
 
-        void UpdateItem(int index, bool completed)
+        void UpdateItem(int index, bool completed, string fileName)
         {
             if (index < items.Count)
             {
                 items[index].completed = completed;
             }
 
-            ConfigNode node = new();
+            ConfigNode node = ConfigNode.Load(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.data");
             string completedData = "";
             foreach (ChecklistItem item in items)
             {
                 if (item.completed) completedData += "X";
                 else completedData += "O";
             }
-            node.AddValue("completedData", completedData);
-            node.Save(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.txt");
+            if (node.HasValue("completedData_" + fileName))
+            {
+                node.SetValue("completedData_" + fileName, completedData);
+            }
+            else
+            {
+                node.AddValue("completedData_" + fileName, completedData);
+            }
+            node.Save(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.data");
         }
         static List<string> SplitStringIntoChunks(string input, int chunkSize)
         {
@@ -202,8 +247,42 @@ namespace RPM_Parts_Checklist
             }
         }
 
-        public string Display(int screenWidth, int screenHeight)
+        public string Display(int screenWidth, int screenHeight, string filePath)
         {
+            items = new();
+            List<string> file = new();
+            bool readSuccessful = false;
+            if (filePath != "")
+            {
+                readSuccessful = ReadFile(filePath, out file);
+            }
+
+            if (readSuccessful)
+            {
+                foreach (string item in file) items.Add(new ChecklistItem(item));
+            }
+
+            try
+            {
+                ConfigNode node = ConfigNode.Load(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.data");
+                string loadedCompletedData = node.GetValue("completedData_" + Path.GetFileNameWithoutExtension(filePath));
+                if (loadedCompletedData.Length == items.Count)
+                {
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        if (loadedCompletedData[i] == 'X')
+                        {
+                            items[i].completed = true;
+                        }
+                        else
+                        {
+                            items[i].completed = false;
+                        }
+                    }
+                }
+            }
+            catch { }
+
             dl.elements.Clear();
 
             int counter = 0;
@@ -249,8 +328,8 @@ namespace RPM_Parts_Checklist
                     },
                     (int button) =>
                     {
-                        if (button == 2) UpdateItem(itemIndex, true);
-                        else if (button == 3) UpdateItem(itemIndex, false);
+                        if (button == 2) UpdateItem(itemIndex, true, Path.GetFileNameWithoutExtension(filePath));
+                        else if (button == 3) UpdateItem(itemIndex, false, Path.GetFileNameWithoutExtension(filePath));
                     }
                 ));
 
