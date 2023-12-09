@@ -128,7 +128,7 @@ namespace RPM_Parts_Checklist
                 Environment.NewLine +
                 Environment.NewLine +
                 "                                  Return" + Environment.NewLine +
-                "Version: 1.0.0";
+                "Version: 1.1.0";
         }
 
         public void ButtonProcessor(int button)
