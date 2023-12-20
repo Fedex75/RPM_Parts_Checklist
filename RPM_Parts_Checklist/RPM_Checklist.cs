@@ -183,7 +183,7 @@
         {
             this.pageTitle = pageTitle;
         }
-
+        //emiivrancic
         void UpdateItem(int index, bool completed, string fileName)
         {
             if (index < items.Count)
@@ -192,6 +192,8 @@
             }
 
             ConfigNode node = ConfigNode.Load(KSPUtil.ApplicationRootPath + "GameData/RPM_Parts_Checklist/save.data");
+            if (node == null) node = new ConfigNode();
+            
             string completedData = "";
             foreach (ChecklistItem item in items)
             {
